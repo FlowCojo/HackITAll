@@ -24,3 +24,9 @@ python -m pip install --upgrade pip setuptools
 
 # Install project dependencies from requirements.txt
 pip install -r requirements.txt
+
+# Run project
+flask run
+
+# Swagger localhost
+http://127.0.0.1:5000/swagger-ui
