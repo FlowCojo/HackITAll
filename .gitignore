@@ -1,0 +1,38 @@
+# Python bytecode și cache-uri
+__pycache__/
+*.py[cod]
+*.so
+*.pyd
+*.pyo
+
+# Environments virtuale
+.env/
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.python-version
+
+# Conda environments (dacă sunt în folderul proiectului)
+**/conda-meta/
+**/Lib/site-packages/
+
+# VS Code settings
+.vscode/
+
+# Fișiere temporare / loguri
+*.log
+*.tmp
+*.swp
+*.bak
+.env
+env
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Fișiere de sistem
+.DS_Store
+Thumbs.db
