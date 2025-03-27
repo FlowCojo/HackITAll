@@ -5,12 +5,8 @@ from schemas import WeaponSchema
 
 blp = Blueprint("Weapons", __name__, description="Operations on weapons")
 
-#  Mock db as a dictionary
-weapons = {
-    "1": {"id": "1", "name": "Katana", "cost": 15.99},
-    "2": {"id": "2", "name": "Longbow", "cost": 10.50},
-    "3": {"id": "3", "name": "Throwing Axe", "cost": 7.25}
-}
+# In-memory weapon store (replace with database in production)
+weapons = {}
 
 @blp.route("/weapon/<string:weapon_id>")
 class WeaponResource(MethodView):
@@ -40,7 +36,6 @@ class WeaponList(MethodView):
         for weapon in weapons.values():
             if weapon_data["name"] == weapon["name"]:
                 abort(400, message="Weapon already exists.")
-
         weapon_id = uuid.uuid4().hex
         weapon = {**weapon_data, "id": weapon_id}
         weapons[weapon_id] = weapon

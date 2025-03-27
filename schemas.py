@@ -5,10 +5,15 @@ class WeaponSchema(Schema):
     name = fields.Str(
         required=True,
         validate=validate.Length(min=1),
-        description="The name of the weapon"
+        metadata={"description": "The name of the weapon"}
     )
     cost = fields.Float(
         required=True,
         validate=validate.Range(min=0.01),
-        description="The cost of the weapon in USD"
+        metadata={"description": "The cost of the weapon in USD"}
+    )
+    type = fields.Str(
+        required=True,
+        validate=validate.OneOf(["strength", "grace", "logic", "stealth", "purity"]),
+        metadata={"description": "The category/type of the weapon"}
     )
