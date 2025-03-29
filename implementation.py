@@ -76,43 +76,38 @@ word = {
     60: {"text": "Entropy", "cost": 45},
 }
 
-
-# Load semantic model (face caching automat)
+# Load model o singură dată
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
-# Precalculăm embeddings pentru lista noastră
+# Precalculăm embeddings o singură dată
 word_texts = [info["text"] for info in word.values()]
 word_ids = list(word.keys())
 word_costs = [word[i]["cost"] for i in word_ids]
 word_embeddings = model.encode(word_texts)
 
-def estimate_strength(system_word):
-    """Heuristică simplă: estimăm costul după embedding similarity față de lista noastră."""
-    embedding = model.encode([system_word])
-    sims = cosine_similarity(embedding, word_embeddings)[0]
-    most_similar_idx = np.argmax(sims)
-    return word_costs[most_similar_idx]
+def what_beats(system_word_text, similarity_threshold=0.35, cost_penalty_weight=0.02):
+    system_embedding = model.encode([system_word_text])[0]
+    sims = cosine_similarity([system_embedding], word_embeddings)[0]
 
-def what_beats(system_word_text, similarity_threshold=0.5):
-    system_embedding = model.encode([system_word_text])
-    est_cost = estimate_strength(system_word_text)
-    sims = cosine_similarity(system_embedding, word_embeddings)[0]
+    scored_candidates = []
+    for i, sim in enumerate(sims):
+        cost = word_costs[i]
+        score = sim - (cost_penalty_weight * cost)
+        if sim >= similarity_threshold:
+            scored_candidates.append((i, score, cost))
 
-    candidates = [
-        (i, cost, sim)
-        for i, (cost, sim) in enumerate(zip(word_costs, sims))
-        if cost > est_cost and sim >= similarity_threshold
-    ]
-
-    if not candidates:
-        fallback = sorted(
-            [(i, cost, sim) for i, (cost, sim) in enumerate(zip(word_costs, sims))],
-            key=lambda x: (x[1], -x[2])  # cost mic, apoi similaritate mare
+    if not scored_candidates:
+        # fallback: cel mai apropiat cu cost minim
+        fallback_idx = sorted(
+            range(len(word_embeddings)),
+            key=lambda i: (word_costs[i], -sims[i])
         )[0]
-        return word_ids[fallback[0]], False  # NOT COUNTER
+        return word_ids[fallback_idx], False
 
-    best = min(candidates, key=lambda x: (x[1], -x[2]))
-    return word_ids[best[0]], True  # COUNTER
+    # alegem candidatul cu scorul cel mai bun
+    best = max(scored_candidates, key=lambda x: x[1])
+    return word_ids[best[0]], True
+
 
 test_inputs = [
     {"word": "Featherdust"},
@@ -153,14 +148,12 @@ test_inputs = [
 penalty = 30
 total_cost = 0
 total_score = 0
-similarity_threshold = 0.5
 
-print(f"\n🔬 Running semantic model test with threshold = {similarity_threshold}...\n")
 for entry in test_inputs:
     test_word = entry["word"]
     start_time = time.time()
 
-    chosen_id, is_counter = what_beats(test_word, similarity_threshold=similarity_threshold)
+    chosen_id, is_counter = what_beats(test_word)
     chosen_word = word[chosen_id]["text"]
     chosen_cost = word[chosen_id]["cost"]
     round_score = chosen_cost + (0 if is_counter else penalty)
