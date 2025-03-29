@@ -1,7 +1,17 @@
 flask
 flask-smorest
+flask-cors
 python-dotenv
 marshmallow
 requests
 scikit-learn
 numpy
+pandas
+matplotlib
+nltk 
+spacy
+transformers
+torch
+sentence-transformers
+joblib
+openai
