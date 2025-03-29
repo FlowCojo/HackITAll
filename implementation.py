@@ -93,14 +93,11 @@ def estimate_strength(system_word):
     most_similar_idx = np.argmax(sims)
     return word_costs[most_similar_idx]
 
-def what_beats(system_word_text, similarity_threshold=0.2):
+def what_beats(system_word_text, similarity_threshold=0.5):
     system_embedding = model.encode([system_word_text])
     est_cost = estimate_strength(system_word_text)
-
-    # Similaritate semantică față de toate cuvintele din listă
     sims = cosine_similarity(system_embedding, word_embeddings)[0]
 
-    # Selectăm doar cuvinte mai puternice (cost > estimat) și suficient de similare
     candidates = [
         (i, cost, sim)
         for i, (cost, sim) in enumerate(zip(word_costs, sims))
@@ -108,62 +105,77 @@ def what_beats(system_word_text, similarity_threshold=0.2):
     ]
 
     if not candidates:
-        # Dacă nu avem candidați valizi, căutăm cel mai similar cu cost minim
         fallback = sorted(
             [(i, cost, sim) for i, (cost, sim) in enumerate(zip(word_costs, sims))],
-            key=lambda x: (x[1], -x[2])  # cost mai mic, similaritate mai mare
+            key=lambda x: (x[1], -x[2])  # cost mic, apoi similaritate mare
         )[0]
-        return word_ids[fallback[0]]
+        return word_ids[fallback[0]], False  # NOT COUNTER
 
-    # Alegem candidatul cu cel mai mic cost
-    best = min(candidates, key=lambda x: (x[1], -x[2]))  # cost mai mic, apoi similaritate
-    return word_ids[best[0]]
+    best = min(candidates, key=lambda x: (x[1], -x[2]))
+    return word_ids[best[0]], True  # COUNTER
 
-
-test_words = [
-    "Featherdust",         # foarte slab
-    "Cotton",              # foarte slab
-    "Bubble",              # foarte slab
-    "Paperclip",           # foarte slab
-    "Soap",                # foarte slab
-    "Ribbon",              # slab
-    "Crayon",              # slab
-    "Pillow",              # slab
-    "Chalk",               # slab-mediu
-    "Fork",                # slab-mediu
-    "Hammer",              # mediu
-    "Bat",                 # mediu
-    "Chainsaw",            # mediu
-    "Fireball",            # mediu
-    "Lightning",           # mediu
-    "Zombie",              # mediu-puternic
-    "Poison",              # mediu-puternic
-    "Flood",               # puternic
-    "Infection",           # puternic
-    "Meteor",              # puternic
-    "Tornado",             # foarte puternic
-    "Explosion",           # foarte puternic
-    "Alien Invasion",      # foarte puternic
-    "Dragon",              # foarte puternic
-    "Black Hole",          # extrem
-    "Sun",                 # extrem
-    "Void",                # extrem
-    "Immortality",         # abstract puternic
-    "Time Travel",         # abstract extrem
-    "Infinity"             # abstract / cosmic
+test_inputs = [
+    {"word": "Featherdust"},
+    {"word": "Cotton"},
+    {"word": "Bubble"},
+    {"word": "Paperclip"},
+    {"word": "Soap"},
+    {"word": "Ribbon"},
+    {"word": "Crayon"},
+    {"word": "Pillow"},
+    {"word": "Chalk"},
+    {"word": "Fork"},
+    {"word": "Hammer"},
+    {"word": "Bat"},
+    {"word": "Chainsaw"},
+    {"word": "Fireball"},
+    {"word": "Lightning"},
+    {"word": "Zombie"},
+    {"word": "Poison"},
+    {"word": "Flood"},
+    {"word": "Infection"},
+    {"word": "Meteor"},
+    {"word": "Tornado"},
+    {"word": "Explosion"},
+    {"word": "Alien Invasion"},
+    {"word": "Dragon"},
+    {"word": "Black Hole"},
+    {"word": "Sun"},
+    {"word": "Void"},
+    {"word": "Immortality"},
+    {"word": "Time Travel"},
+    {"word": "Infinity"}
 ]
 
 
-print("🔬 Running semantic model test...\n")
-for test_word in test_words:
+
+# Run test
+penalty = 30
+total_cost = 0
+total_score = 0
+similarity_threshold = 0.5
+
+print(f"\n🔬 Running semantic model test with threshold = {similarity_threshold}...\n")
+for entry in test_inputs:
+    test_word = entry["word"]
     start_time = time.time()
 
-    chosen_id = what_beats(test_word)
+    chosen_id, is_counter = what_beats(test_word, similarity_threshold=similarity_threshold)
     chosen_word = word[chosen_id]["text"]
     chosen_cost = word[chosen_id]["cost"]
+    round_score = chosen_cost + (0 if is_counter else penalty)
+
+    total_cost += chosen_cost
+    total_score += round_score
 
     elapsed = time.time() - start_time
-    print(f"SYSTEM word: {test_word:15} ➜ CHOSEN: {chosen_word:25} (cost ${chosen_cost:2}) | response time: {elapsed:.2f}s {'✅' if elapsed <= 5 else '❌'}")
+    counter_status = "COUNTER" if is_counter else "NOT COUNTER"
+    status = "✅" if elapsed <= 5 else "❌"
+
+    print(f"SYSTEM word: {test_word:15} ➜ CHOSEN: {chosen_word:25} (cost ${chosen_cost:2}) | {counter_status:12} | round score: ${round_score:<3} | response time: {elapsed:.2f}s {status}")
+
+print(f"\n💰 Total base cost: ${total_cost}")
+print(f"⚔️  Total score (with penalties): ${total_score}")
 
 
 def play_game(player_id):
@@ -187,4 +199,6 @@ def play_game(player_id):
         response = requests.post(post_url, json=data)
         print(response.json())
 
-# play_game("1")
+# for i in range(50):
+#     response = requests.get(get_url)
+#     print(response.json())
