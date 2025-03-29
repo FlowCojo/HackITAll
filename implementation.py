@@ -76,16 +76,13 @@ word = {
     60: {"text": "Entropy", "cost": 45},
 }
 
-# Load model o singură dată
 model = SentenceTransformer('all-MiniLM-L6-v2')
-
-# Precalculăm embeddings o singură dată
 word_texts = [info["text"] for info in word.values()]
 word_ids = list(word.keys())
 word_costs = [word[i]["cost"] for i in word_ids]
 word_embeddings = model.encode(word_texts)
 
-def what_beats(system_word_text, similarity_threshold=0.35, cost_penalty_weight=0.02):
+def what_beats(system_word_text, similarity_threshold=0.25, cost_penalty_weight=0.005):
     system_embedding = model.encode([system_word_text])[0]
     sims = cosine_similarity([system_embedding], word_embeddings)[0]
 
@@ -97,79 +94,15 @@ def what_beats(system_word_text, similarity_threshold=0.35, cost_penalty_weight=
             scored_candidates.append((i, score, cost))
 
     if not scored_candidates:
-        # fallback: cel mai apropiat cu cost minim
+
         fallback_idx = sorted(
             range(len(word_embeddings)),
             key=lambda i: (word_costs[i], -sims[i])
         )[0]
-        return word_ids[fallback_idx], False
+        return word_ids[fallback_idx]
 
-    # alegem candidatul cu scorul cel mai bun
     best = max(scored_candidates, key=lambda x: x[1])
-    return word_ids[best[0]], True
-
-
-test_inputs = [
-    {"word": "Featherdust"},
-    {"word": "Cotton"},
-    {"word": "Bubble"},
-    {"word": "Paperclip"},
-    {"word": "Soap"},
-    {"word": "Ribbon"},
-    {"word": "Crayon"},
-    {"word": "Pillow"},
-    {"word": "Chalk"},
-    {"word": "Fork"},
-    {"word": "Hammer"},
-    {"word": "Bat"},
-    {"word": "Chainsaw"},
-    {"word": "Fireball"},
-    {"word": "Lightning"},
-    {"word": "Zombie"},
-    {"word": "Poison"},
-    {"word": "Flood"},
-    {"word": "Infection"},
-    {"word": "Meteor"},
-    {"word": "Tornado"},
-    {"word": "Explosion"},
-    {"word": "Alien Invasion"},
-    {"word": "Dragon"},
-    {"word": "Black Hole"},
-    {"word": "Sun"},
-    {"word": "Void"},
-    {"word": "Immortality"},
-    {"word": "Time Travel"},
-    {"word": "Infinity"}
-]
-
-
-
-# Run test
-penalty = 30
-total_cost = 0
-total_score = 0
-
-for entry in test_inputs:
-    test_word = entry["word"]
-    start_time = time.time()
-
-    chosen_id, is_counter = what_beats(test_word)
-    chosen_word = word[chosen_id]["text"]
-    chosen_cost = word[chosen_id]["cost"]
-    round_score = chosen_cost + (0 if is_counter else penalty)
-
-    total_cost += chosen_cost
-    total_score += round_score
-
-    elapsed = time.time() - start_time
-    counter_status = "COUNTER" if is_counter else "NOT COUNTER"
-    status = "✅" if elapsed <= 5 else "❌"
-
-    print(f"SYSTEM word: {test_word:15} ➜ CHOSEN: {chosen_word:25} (cost ${chosen_cost:2}) | {counter_status:12} | round score: ${round_score:<3} | response time: {elapsed:.2f}s {status}")
-
-print(f"\n💰 Total base cost: ${total_cost}")
-print(f"⚔️  Total score (with penalties): ${total_score}")
-
+    return word_ids[best[0]]
 
 def play_game(player_id):
 
@@ -192,6 +125,4 @@ def play_game(player_id):
         response = requests.post(post_url, json=data)
         print(response.json())
 
-# for i in range(50):
-#     response = requests.get(get_url)
-#     print(response.json())
+play_game("QvYX9qcMPH")
