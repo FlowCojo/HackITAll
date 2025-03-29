@@ -1,12 +1,17 @@
 flask
 flask-smorest
+flask-cors
 python-dotenv
 marshmallow
-<<<<<<< HEAD
 openai
-
-=======
-requests
 scikit-learn
 numpy
->>>>>>> d33a05123116d2c87d19cfd7c8a7632b840a1937
+pandas
+matplotlib
+nltk 
+spacy
+transformers
+torch
+sentence-transformers
+joblib
+openai
